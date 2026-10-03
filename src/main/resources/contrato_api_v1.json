@@ -1,0 +1,386 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API de Identidad y Autenticación (IAM)",
+    "description": "Contrato de API estándar para gestión de usuarios, sesiones, autenticación de dos factores (OTP) y recuperación de contraseñas.",
+    "version": "1.4.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.ejemplo.com",
+      "description": "Servidor de Producción"
+    }
+  ],
+  "paths": {
+    "/api/v1/usuarios": {
+      "post": {
+        "summary": "Registro de un nuevo usuario",
+        "description": "Registra un nuevo usuario en la plataforma y genera su perfil inicial.",
+        "operationId": "registrarUsuario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre", "correo", "password"],
+                "properties": {
+                  "nombre": { "type": "string", "example": "César Zebadúa" },
+                  "correo": { "type": "string", "format": "email", "example": "cesar.zebadua@ids.upchiapas.edu.mx" },
+                  "password": { "type": "string", "format": "password", "example": "PasswordSegura123!" },
+                  "rol": { "type": "string", "example": "cliente" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado exitosamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "usr_8f391a0b",
+                    "nombre": "César Zebadúa",
+                    "correo": "cesar.zebadua@ids.upchiapas.edu.mx",
+                    "rol": "cliente",
+                    "estado": "pendiente_verificacion",
+                    "creado_en": "2026-09-22T11:00:00Z"
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T11:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sesiones": {
+      "post": {
+        "summary": "Iniciar sesión validando credenciales",
+        "description": "Autentica a un usuario mediante sus credenciales y genera los tokens de acceso y refresco.",
+        "operationId": "iniciarSesion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["correo", "password"],
+                "properties": {
+                  "correo": { "type": "string", "format": "email", "example": "cesar.zebadua@ids.upchiapas.edu.mx" },
+                  "password": { "type": "string", "format": "password", "example": "zebadua123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sesión iniciada exitosamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "sesionId": "ses_49201ab",
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refreshToken": "def502005a90ed5962351...",
+                    "expiresIn": 3600,
+                    "tipoToken": "Bearer"
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T11:05:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sesiones/actual": {
+      "delete": {
+        "summary": "Cierre de sesión e invalidación de tokens",
+        "description": "Cierra la sesión activa del usuario, agregando el token a la lista negra.",
+        "operationId": "cerrarSesion",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Sesión cerrada exitosamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "mensaje": "Sesión cerrada correctamente. Tokens invalidados."
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T13:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/codigos-otp": {
+      "post": {
+        "summary": "Solicitud y envío de código OTP",
+        "description": "Genera y envía un código de un solo uso al correo del usuario.",
+        "operationId": "solicitarOtp",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["correo", "proposito"],
+                "properties": {
+                  "correo": { "type": "string", "format": "email", "example": "cesar.zebadua@ids.upchiapas.edu.mx" },
+                  "proposito": { "type": "string", "example": "verificacion_cuenta" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OTP enviado correctamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "referenciaId": "otp_9823hjd",
+                    "mensaje": "Código OTP enviado exitosamente al correo registrado.",
+                    "expiraEnSegundos": 300
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T13:10:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/codigos-otp/validaciones": {
+      "post": {
+        "summary": "Verificación y validación de código OTP",
+        "description": "Valida el código OTP ingresado por el usuario.",
+        "operationId": "validarOtp",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["referenciaId", "codigo", "proposito"],
+                "properties": {
+                  "referenciaId": { "type": "string", "example": "otp_9823hjd" },
+                  "codigo": { "type": "string", "example": "481516" },
+                  "proposito": { "type": "string", "example": "verificacion_cuenta" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP validado correctamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "valido": true,
+                    "mensaje": "Código OTP verificado correctamente."
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T13:12:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sesiones/renovaciones": {
+      "post": {
+        "summary": "Renovación de token de acceso expirado",
+        "description": "Emite un nuevo token de acceso utilizando un token de refresco válido.",
+        "operationId": "renovarToken",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": {
+                  "refreshToken": { "type": "string", "example": "def502005a90ed5962351..." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Token renovado con éxito",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.NUEVO...",
+                    "refreshToken": "def502005a90ed5962351.NUEVO...",
+                    "expiresIn": 3600
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T12:05:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/yo": {
+      "get": {
+        "summary": "Consulta del perfil del usuario autenticado",
+        "description": "Obtiene la información del usuario autenticado en la sesión actual.",
+        "operationId": "obtenerPerfil",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Perfil obtenido exitosamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "usr_8f391a0b",
+                    "nombre": "César Zebadúa",
+                    "correo": "cesar.zebadua@ids.upchiapas.edu.mx",
+                    "rol": "cliente",
+                    "estado": "activo",
+                    "ultimoAcceso": "2026-09-22T11:05:00Z"
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T14:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes-recuperacion": {
+      "post": {
+        "summary": "Solicitud de recuperación de contraseña",
+        "description": "Inicia el proceso de recuperación enviando un enlace al correo.",
+        "operationId": "solicitarRecuperacion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["correo"],
+                "properties": {
+                  "correo": { "type": "string", "format": "email", "example": "cesar.zebadua@ids.upchiapas.edu.mx" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Solicitud procesada correctamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "mensaje": "Si el correo existe en nuestro sistema, hemos enviado las instrucciones para restablecer la contraseña."
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T15:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/password": {
+      "patch": {
+        "summary": "Restablecimiento de la contraseña",
+        "description": "Asigna una nueva contraseña validando el token de recuperación.",
+        "operationId": "restablecerPassword",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["tokenRecuperacion", "nuevaPassword"],
+                "properties": {
+                  "tokenRecuperacion": { "type": "string", "example": "rec_token_abc123xyz" },
+                  "nuevaPassword": { "type": "string", "format": "password", "example": "NuevaPasswordSegura456!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contraseña restablecida exitosamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "mensaje": "La contraseña ha sido actualizada correctamente. Puedes iniciar sesión."
+                  },
+                  "meta": {
+                    "version": "1.4.0",
+                    "timestamp": "2026-09-22T15:15:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

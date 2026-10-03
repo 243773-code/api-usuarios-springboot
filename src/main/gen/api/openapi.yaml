@@ -1,0 +1,360 @@
+openapi: 3.0.3
+info:
+  description: "Contrato de API estándar para gestión de usuarios, sesiones, autenticació\
+    n de dos factores (OTP) y recuperación de contraseñas."
+  title: API de Identidad y Autenticación (IAM)
+  version: 1.4.0
+servers:
+- description: Servidor de Producción
+  url: https://api.ejemplo.com
+paths:
+  /api/v1/usuarios:
+    post:
+      description: Registra un nuevo usuario en la plataforma y genera su perfil inicial.
+      operationId: registrarUsuario
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/registrarUsuario_request'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  id: usr_8f391a0b
+                  nombre: César Zebadúa
+                  correo: cesar.zebadua@ids.upchiapas.edu.mx
+                  rol: cliente
+                  estado: pendiente_verificacion
+                  creado_en: 2026-09-22T11:00:00Z
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T11:00:00Z
+          description: Usuario creado exitosamente
+      summary: Registro de un nuevo usuario
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/v1/sesiones:
+    post:
+      description: Autentica a un usuario mediante sus credenciales y genera los tokens
+        de acceso y refresco.
+      operationId: iniciarSesion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/iniciarSesion_request'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  sesionId: ses_49201ab
+                  accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  refreshToken: def502005a90ed5962351...
+                  expiresIn: 3600
+                  tipoToken: Bearer
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T11:05:00Z
+          description: Sesión iniciada exitosamente
+      summary: Iniciar sesión validando credenciales
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/v1/sesiones/actual:
+    delete:
+      description: "Cierra la sesión activa del usuario, agregando el token a la lista\
+        \ negra."
+      operationId: cerrarSesion
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  mensaje: Sesión cerrada correctamente. Tokens invalidados.
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T13:00:00Z
+          description: Sesión cerrada exitosamente
+      security:
+      - BearerAuth: []
+      summary: Cierre de sesión e invalidación de tokens
+      x-accepts:
+      - application/json
+  /api/v1/codigos-otp:
+    post:
+      description: Genera y envía un código de un solo uso al correo del usuario.
+      operationId: solicitarOtp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/solicitarOtp_request'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  referenciaId: otp_9823hjd
+                  mensaje: Código OTP enviado exitosamente al correo registrado.
+                  expiraEnSegundos: 300
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T13:10:00Z
+          description: OTP enviado correctamente
+      summary: Solicitud y envío de código OTP
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/v1/codigos-otp/validaciones:
+    post:
+      description: Valida el código OTP ingresado por el usuario.
+      operationId: validarOtp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/validarOtp_request'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  valido: true
+                  mensaje: Código OTP verificado correctamente.
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T13:12:00Z
+          description: OTP validado correctamente
+      summary: Verificación y validación de código OTP
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/v1/sesiones/renovaciones:
+    post:
+      description: Emite un nuevo token de acceso utilizando un token de refresco
+        válido.
+      operationId: renovarToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/renovarToken_request'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.NUEVO...
+                  refreshToken: def502005a90ed5962351.NUEVO...
+                  expiresIn: 3600
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T12:05:00Z
+          description: Token renovado con éxito
+      summary: Renovación de token de acceso expirado
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/v1/usuarios/yo:
+    get:
+      description: Obtiene la información del usuario autenticado en la sesión actual.
+      operationId: obtenerPerfil
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  id: usr_8f391a0b
+                  nombre: César Zebadúa
+                  correo: cesar.zebadua@ids.upchiapas.edu.mx
+                  rol: cliente
+                  estado: activo
+                  ultimoAcceso: 2026-09-22T11:05:00Z
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T14:00:00Z
+          description: Perfil obtenido exitosamente
+      security:
+      - BearerAuth: []
+      summary: Consulta del perfil del usuario autenticado
+      x-accepts:
+      - application/json
+  /api/v1/solicitudes-recuperacion:
+    post:
+      description: Inicia el proceso de recuperación enviando un enlace al correo.
+      operationId: solicitarRecuperacion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/solicitarRecuperacion_request'
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  mensaje: "Si el correo existe en nuestro sistema, hemos enviado\
+                    \ las instrucciones para restablecer la contraseña."
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T15:00:00Z
+          description: Solicitud procesada correctamente
+      summary: Solicitud de recuperación de contraseña
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/v1/usuarios/password:
+    patch:
+      description: Asigna una nueva contraseña validando el token de recuperación.
+      operationId: restablecerPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/restablecerPassword_request'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  mensaje: La contraseña ha sido actualizada correctamente. Puedes
+                    iniciar sesión.
+                meta:
+                  version: 1.4.0
+                  timestamp: 2026-09-22T15:15:00Z
+          description: Contraseña restablecida exitosamente
+      summary: Restablecimiento de la contraseña
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+components:
+  schemas:
+    solicitarRecuperacion_request:
+      properties:
+        correo:
+          example: cesar.zebadua@ids.upchiapas.edu.mx
+          format: email
+          type: string
+      required:
+      - correo
+      type: object
+    solicitarOtp_request:
+      properties:
+        correo:
+          example: cesar.zebadua@ids.upchiapas.edu.mx
+          format: email
+          type: string
+        proposito:
+          example: verificacion_cuenta
+          type: string
+      required:
+      - correo
+      - proposito
+      type: object
+    renovarToken_request:
+      properties:
+        refreshToken:
+          example: def502005a90ed5962351...
+          type: string
+      required:
+      - refreshToken
+      type: object
+    restablecerPassword_request:
+      properties:
+        tokenRecuperacion:
+          example: rec_token_abc123xyz
+          type: string
+        nuevaPassword:
+          example: NuevaPasswordSegura456!
+          format: password
+          type: string
+      required:
+      - nuevaPassword
+      - tokenRecuperacion
+      type: object
+    registrarUsuario_request:
+      properties:
+        nombre:
+          example: César Zebadúa
+          type: string
+        correo:
+          example: cesar.zebadua@ids.upchiapas.edu.mx
+          format: email
+          type: string
+        password:
+          example: PasswordSegura123!
+          format: password
+          type: string
+        rol:
+          example: cliente
+          type: string
+      required:
+      - correo
+      - nombre
+      - password
+      type: object
+    iniciarSesion_request:
+      properties:
+        correo:
+          example: cesar.zebadua@ids.upchiapas.edu.mx
+          format: email
+          type: string
+        password:
+          example: zebadua123!
+          format: password
+          type: string
+      required:
+      - correo
+      - password
+      type: object
+    validarOtp_request:
+      properties:
+        referenciaId:
+          example: otp_9823hjd
+          type: string
+        codigo:
+          example: "481516"
+          type: string
+        proposito:
+          example: verificacion_cuenta
+          type: string
+      required:
+      - codigo
+      - proposito
+      - referenciaId
+      type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
+
